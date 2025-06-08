@@ -1,1 +1,52 @@
-best_tinyqwenvl_1.4B.pth
+# Ignore Python cache files
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Ignore virtual environments
+venv/
+.env/
+
+# Ignore data files
+data/raw/
+data/processed/
+
+# Ignore model checkpoints
+models/checkpoints/
+
+# Ignore logs
+logs/
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore deployment artifacts
+deployment/docker/*.log
+deployment/docker/*.tmp
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore environment files
+*.env
+*.env.*
+
+# Ignore temporary files
+*.swp
+*.swo
+*.tmp
+*.bak
+
+# Ignore large files (e.g., pretrained models)
+*.pth
+*.pt
+*.h5
+*.ckpt
+
+# Ignore node_modules (if Node.js is used)
+node_modules/
+
+# Ignore experiment tracking files (optional)
+wandb/
+mlruns/

@@ -5,6 +5,33 @@
 
 This repository and its contents are provided for academic and research purposes only.
 
+## Project Directory Structure
+
+Below is the directory structure of the project:
+<pre>
+tiny-qwen-vl-1.4B/
+├── data/                     # Dataset storage
+│   ├── raw/                  # Raw, unprocessed datasets
+│   ├── processed/            # Preprocessed datasets
+│   └── README.md             # Documentation for datasets
+├── models/                   # Pretrained and fine-tuned models
+│   ├── checkpoints/          # Model checkpoints
+│   └── README.md             # Documentation for models
+├── src/                      # Source code
+│   ├── train.py              # Training script
+│   ├── evaluate.py           # Evaluation script
+│   ├── preprocess.py         # Data preprocessing script
+│   ├── inference.py          # Inference script for deployment
+│   ├── config/               # Configuration files
+│   │   └── config.yaml       # Model and training configuration
+│   └── utils/                # Utility functions
+│       └── rope2d.py        # Helper functions
+├── notebooks/                # Jupyter notebooks for experiments
+│   ├── tinyqwenvl-1-4b.ipynb   # Data exploration and analysis
+├── .gitignore                # Git ignore file
+├── requirements.txt          # Python dependencies
+</pre>
+
 ## Backbone Information
 
 This repository hosts the checkpoint for the Tiny-Qwen-VL model, version 1.4B. The model architecture consists of the following components:
@@ -38,4 +65,3 @@ The `tinyqwenvl-1-4b.ipynb` notebook currently supports only training stage 1. T
 ## Upcoming Features
 
 The next release will introduce `model.generate`, enabling text generation directly from the Tiny-Qwen-VL model. Stay tuned for further details and implementation updates.
-
