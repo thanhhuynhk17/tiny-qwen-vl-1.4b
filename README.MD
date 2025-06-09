@@ -49,22 +49,24 @@ These components work in synergy to enable efficient multimodal learning and inf
 
 ## Checkpoint
 
-To download the pre-trained checkpoint, ensure you have `gdown` installed. You can install it using pip:
+To download the pre-trained checkpoint, use the provided `hf_download_ckpt.py` script.
 
 ```bash
-pip install gdown
-```
-
-Then, use the following command:
-
-```bash
-gdown --id 1_8HpI6WMNU1wr8ABSlsdFMrEwzvgvvcr -O best_tinyqwenvl_1.4B.pth
+python hf_download_ckpt.py
 ```
 
 ## Important Notice
 
 The `tinyqwenvl-1-4b.ipynb` notebook currently supports only training stage 1. Training stage 2 will be added in a future update. Please check back for the latest updates.
 
-## Upcoming Features
+## Inference
 
-The next release will introduce `model.generate`, enabling text generation directly from the Tiny-Qwen-VL model. Stay tuned for further details and implementation updates.
+```bash
+python src/inference.py
+```
+
+Output:
+
+```bash
+
+```

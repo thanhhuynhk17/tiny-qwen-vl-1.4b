@@ -9,6 +9,12 @@ from PIL import Image
 from transformers import AutoProcessor, AutoTokenizer
 from src.model import TinyQwenVL  # wherever you defined your class
 from preprocess import collate_fn
+import argparse
+# Parse arguments
+parser = argparse.ArgumentParser(description="Inference script for TinyQwenVL")
+parser.add_argument("--best_model_path", type=str, required=True, help="Path to the best model checkpoint")
+args = parser.parse_args()
+
 # Setup
 device = "cuda" if torch.cuda.is_available() else "cpu"
 # device = "cpu" # forcing cpu device
@@ -33,8 +39,10 @@ tokenizer.padding_side='right'
 # load model
 model = TinyQwenVL(torch_dtype=torch.float32).to(device)
 # load checkpoint
-best_model_path = "models/checkpoints/best_tinyqwenvl_1.4B.pth"
+
+best_model_path = args.best_model_path
 model.text_decoder.resize_token_embeddings(len(tokenizer))
+
 state_dict = torch.load(best_model_path, map_location=device)
 missing_keys, unexpected_keys = model.load_state_dict(state_dict, strict=False)
 print("Missing keys:", missing_keys)
