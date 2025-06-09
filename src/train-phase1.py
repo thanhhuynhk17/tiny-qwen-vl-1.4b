@@ -141,14 +141,12 @@ for epoch in range(num_epochs):
     print(f"\n🚀 Epoch {epoch+1}/{num_epochs} Training...\n")
     # ─── TRAINING PHASE ─────────────────────────────────────────────────────
     for step, batch in enumerate(train_loader):
-        dummy_input_ids = batch["dummy_input_ids"].to(device)
         pixel_values = batch["pixel_values"].to(device)
         input_ids = batch["input_ids"].to(device)
         attention_mask = batch["attention_mask"].to(device)
         labels = batch["labels"].to(device)
 
-        logits = model(dummy_input_ids=dummy_input_ids,
-                       pixel_values=pixel_values,
+        logits = model(pixel_values=pixel_values,
                        input_ids=input_ids,
                        attention_mask=attention_mask)
 
@@ -188,7 +186,6 @@ for epoch in range(num_epochs):
     with torch.no_grad():
         for step, batch in enumerate(val_loader):
             # val inputs for loss computation
-            dummy_input_ids  = batch["dummy_input_ids"].to(device)
             pixel_values     = batch["pixel_values"].to(device)
             input_ids        = batch["input_ids"].to(device)
             attention_mask   = batch["attention_mask"].to(device)
@@ -196,7 +193,6 @@ for epoch in range(num_epochs):
 
             # Compute validation loss (same as training)
             logits = model(
-                dummy_input_ids=dummy_input_ids,
                 pixel_values=pixel_values,
                 input_ids=input_ids,
                 attention_mask=attention_mask
