@@ -1,14 +1,36 @@
 import sys
 import os
+import argparse
+
 # Add the project root directory to the Python path
 project_root = os.path.abspath(os.path.join(os.getcwd(), ".."))
 sys.path.append(project_root)
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Train TinyQwenVL model")
+
+    # Add your arguments here
+    parser.add_argument("--batch_size", type=int, default=16, help="Batch size for training")
+    parser.add_argument("--learning_rate", type=float, default=5e-5, help="Learning rate")
+    parser.add_argument("--num_epochs", type=int, default=10, help="Number of epochs")
+    parser.add_argument("--save_path", type=str, default="./checkpoints", help="Path to save checkpoints")
+    parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
+    parser.add_argument("--gradient_accumulation_steps", type=int, default=8, help="Number of gradient accumulation steps")
+    return parser.parse_args()
+
+args = parse_args()
+
+# Now you can use args.batch_size, args.learning_rate, etc.
+print(f"Batch size: {args.batch_size}")
+print(f"Learning rate: {args.learning_rate}")
+print(f"Saving path: {args.save_path}")
+
 
 SIGLIP_MODEL = "google/siglip-so400m-patch14-224"
 QWEN_MODEL = "Qwen/Qwen2.5-0.5B"
 
 from transformers import set_seed
-set_seed(42)
+set_seed(args.seed)  # Set random seed for reproducibility
 
 # LOAD dataset
 from datasets import load_dataset
@@ -42,13 +64,13 @@ tokenizer.padding_side='right'
 # Split dataset
 from src.preprocess import collate_fn
 
-split_dataset = dataset.train_test_split(test_size=0.2, seed=42)
+split_dataset = dataset.train_test_split(test_size=0.2, seed=args.seed)
 import torch
 from torch.utils.data import DataLoader
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
-batch_size = 16
+batch_size = args.batch_size
 val_loader = DataLoader(split_dataset["test"], batch_size=batch_size, shuffle=False,\
                         collate_fn=lambda batch: collate_fn(batch,
                                                             processor,
@@ -95,18 +117,19 @@ import torch.optim as optim
 # import evaluate
 # accuracy = evaluate.load("accuracy")
 
-optimizer = optim.AdamW(model.parameters(), lr=2e-5)
+optimizer = optim.AdamW(model.parameters(), 
+                        lr=args.learning_rate)
 criterion = nn.CrossEntropyLoss()
 # Note: CrossEntropyLoss expects the input to be of shape (N, C) 
 # where N is the batch size and C is the number of classes.
 # Training loop
 from torch.nn.utils import clip_grad_norm_
 
-num_epochs = 10
+num_epochs = args.num_epochs
 best_val_loss = float('inf')
-best_model_path = "best_tinyqwenvl_1.4B.pth"
+best_model_path = f"{args.save_path}/best_tinyqwenvl_1.4B.pth"
 
-gradient_accumulation_steps = 8  # ga x bz = real batch_size to take gradient backward
+gradient_accumulation_steps = args.gradient_accumulation_steps  # ga x bz = real batch_size to take gradient backward
 
 for epoch in range(num_epochs):
     model.train()
