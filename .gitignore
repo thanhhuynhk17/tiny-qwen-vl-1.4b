@@ -12,7 +12,7 @@ data/raw/
 data/processed/
 
 # Ignore model checkpoints
-# models/checkpoints/
+models/checkpoints/
 
 # Ignore logs
 logs/
