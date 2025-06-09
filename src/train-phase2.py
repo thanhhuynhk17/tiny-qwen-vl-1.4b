@@ -117,6 +117,7 @@ if model.adapter._precomputed_rope == True:
 # model text decoder require gradients
 for param in model.text_decoder.parameters():
     print("param.requires_grad:", param.requires_grad)
+    break
 
 model.to(device)
 
