@@ -13,6 +13,8 @@ import argparse
 # Parse arguments
 parser = argparse.ArgumentParser(description="Inference script for TinyQwenVL")
 parser.add_argument("--best_model_path", type=str, required=True, help="Path to the best model checkpoint")
+# args for image name
+parser.add_argument("--image_name", type=str, default="data/images/meowselfie.jpg", help="Path to the input image")
 args = parser.parse_args()
 
 # Setup
@@ -24,6 +26,8 @@ QWEN_MODEL = "Qwen/Qwen2.5-0.5B"
 
 # load processor & tokenizer
 processor = AutoProcessor.from_pretrained(SIGLIP_MODEL)
+processor.image_processor.size = {'height': 448, 'width': 448}
+
 tokenizer = AutoTokenizer.from_pretrained(QWEN_MODEL, trust_remote_code=True)
 # add special tokens extended
 tokenizer.add_special_tokens({
@@ -56,7 +60,7 @@ print(model.get_model_stats())
 batch = [{
     "question": "Please carefully observe the image and come up with a caption for the image.",
     "answer": [],
-    "image": Image.open("data/images/meowselfie.jpg")
+    "image": Image.open(f"data/images/{args.image_name}")
 }]
 
 data = collate_fn(batch=batch, 
@@ -91,7 +95,8 @@ with torch.no_grad():
         min_p=0,
         num_return_sequences=num_return_sequences,
         pad_token_id=tokenizer.pad_token_id,
-        eos_token_id=tokenizer.eos_token_id
+        eos_token_id=tokenizer.eos_token_id,
+        interpolate_pos_encoding=True
     )
     print(outputs.shape)
 
