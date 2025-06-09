@@ -8,28 +8,31 @@ This repository and its contents are provided for academic and research purposes
 ## Project Directory Structure
 
 Below is the directory structure of the project:
+
 <pre>
-tiny-qwen-vl-1.4B/
-├── data/                     # Dataset storage
-│   ├── raw/                  # Raw, unprocessed datasets
-│   ├── processed/            # Preprocessed datasets
-│   └── README.md             # Documentation for datasets
-├── models/                   # Pretrained and fine-tuned models
-│   ├── checkpoints/          # Model checkpoints
-│   └── README.md             # Documentation for models
-├── src/                      # Source code
-│   ├── train.py              # Training script
-│   ├── evaluate.py           # Evaluation script
-│   ├── preprocess.py         # Data preprocessing script
-│   ├── inference.py          # Inference script for deployment
-│   ├── config/               # Configuration files
-│   │   └── config.yaml       # Model and training configuration
-│   └── utils/                # Utility functions
-│       └── rope2d.py        # Helper functions
-├── notebooks/                # Jupyter notebooks for experiments
-│   ├── tinyqwenvl-1-4b.ipynb   # Data exploration and analysis
-├── .gitignore                # Git ignore file
-├── requirements.txt          # Python dependencies
+data/
+    └── images/
+        ├── dog_and_girl.jpeg
+        ├── frame1.jpg
+        ├── meowselfie.jpg
+        └── untitled.jpg
+notebooks/
+    ├── rope2d_vs_abs_pos_embed.ipynb
+    └── tinyqwenvl-1-4b.ipynb
+src/
+    ├── utils/
+        ├── __init__.py
+        ├── abs_pos_embed.py
+        ├── rope2d.py
+        └── vision_utils.py
+    ├── __init__.py
+    ├── inference.py
+    ├── model.py
+    ├── preprocess.py
+    └── train.py
+.gitignore
+README.MD
+requirements.txt
 </pre>
 
 ## Backbone Information

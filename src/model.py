@@ -253,3 +253,34 @@ class TinyQwenVL(nn.Module):
             eos_token_id=eos_token_id,
             **kwargs
         )
+
+    def get_model_stats(self):
+        """
+        Calculate the number of parameters and model size in different data types.
+
+        Returns:
+            dict: A dictionary containing:
+                - num_params (int): Total number of parameters.
+                - num_params_billion (float): Total number of parameters in billions.
+                - size_float16_gb (float): Model size in GB for float16.
+                - size_bfloat16_gb (float): Model size in GB for bfloat16.
+                - size_float32_gb (float): Model size in GB for float32.
+        """
+        num_params = sum(p.numel() for p in self.parameters())
+        num_params_billion = num_params / 1e9
+        bytes_per_param = {
+            'float16': 2,  # 2 bytes per parameter
+            'bfloat16': 2,  # 2 bytes per parameter
+            'float32': 4   # 4 bytes per parameter
+        }
+        size_float16_gb = (num_params * bytes_per_param['float16']) / 1e9
+        size_bfloat16_gb = (num_params * bytes_per_param['bfloat16']) / 1e9
+        size_float32_gb = (num_params * bytes_per_param['float32']) / 1e9
+
+        return {
+            'num_params': num_params,
+            'num_params_billion': round(num_params_billion, 3),
+            'size_float16_gb': round(size_float16_gb, 3),
+            'size_bfloat16_gb': round(size_bfloat16_gb, 3),
+            'size_float32_gb': round(size_float32_gb, 3)
+        }

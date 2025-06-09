@@ -11,7 +11,7 @@ from src.model import TinyQwenVL  # wherever you defined your class
 from preprocess import collate_fn
 # Setup
 device = "cuda" if torch.cuda.is_available() else "cpu"
-device = "cpu" # forcing cpu device
+# device = "cpu" # forcing cpu device
 # paths or model IDs
 SIGLIP_MODEL = "google/siglip-so400m-patch14-224"
 QWEN_MODEL = "Qwen/Qwen2.5-0.5B"
@@ -43,12 +43,12 @@ print("adapter._precomputed_rope: ", model.adapter._precomputed_rope)
 if model.adapter._precomputed_rope == True:
     model.adapter._precomputed_rope = False
 model.eval()
-
+print(model.get_model_stats())
 # 2. Prepare inputs
 batch = [{
     "question": "Please carefully observe the image and come up with a caption for the image.",
     "answer": [],
-    "image": Image.open("data/images/dog_and_girl.jpeg")
+    "image": Image.open("data/images/meowselfie.jpg")
 }]
 
 data = collate_fn(batch=batch, 
@@ -77,8 +77,9 @@ with torch.no_grad():
         max_new_tokens=64,
         num_beams=4,
         do_sample=True,
-        top_p=0.9,
-        top_k=20,
+        top_p=0.95,
+        temperature=1.5,
+        top_k=40,
         min_p=0,
         num_return_sequences=num_return_sequences,
         pad_token_id=tokenizer.pad_token_id,
