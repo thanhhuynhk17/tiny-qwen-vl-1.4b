@@ -136,12 +136,14 @@ class TinyQwenVL(nn.Module):
                 pixel_values: torch.Tensor,
                 input_ids: torch.Tensor,
                 attention_mask: torch.Tensor,
-                labels: torch.Tensor = None):
+                labels: torch.Tensor = None,
+                **kwargs):
 
         # Step 1: Get vision features
         # image size: 224 x 224, patch: 14
         # -> vision features: (224/14)^2 = 256 tokens
         vision_output = self.vision_encoder.vision_model(pixel_values=pixel_values,
+                                                        interpolate_pos_encoding=kwargs.get('interpolate_pos_encoding', False),
                                                         output_hidden_states=True)
         vision_features = vision_output.last_hidden_state  # (B, 256, vision_dim)
 
@@ -199,6 +201,7 @@ class TinyQwenVL(nn.Module):
         temperature=1.0,
         pad_token_id=None,
         eos_token_id=None,
+        interpolate_pos_encoding=True,
         **kwargs):
         """
         Generate text based on visual and textual inputs.
@@ -223,6 +226,7 @@ class TinyQwenVL(nn.Module):
         """
         # Step 1: Get vision features
         vision_output = self.vision_encoder.vision_model(pixel_values=pixel_values,
+                                                        interpolate_pos_encoding=interpolate_pos_encoding,
                                                         output_hidden_states=True)
         vision_features = vision_output.last_hidden_state  # (B, 256, vision_dim)
 
