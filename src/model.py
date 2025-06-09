@@ -187,20 +187,41 @@ class TinyQwenVL(nn.Module):
         return text_embeds
     
     def generate(self,
-                input_ids,
-                attention_mask=None,
-                pixel_values=None,
-                max_new_tokens=32,
-                num_beams=5,
-                pad_token_id=None,
-                eos_token_id=None,
-                **kwargs):
-        from transformers.generation import BeamSearchScorer
-        from transformers.generation.utils import GenerationMixin
+        input_ids,
+        attention_mask=None,
+        pixel_values=None,
+        max_new_tokens=32,
+        num_beams=5,
+        num_return_sequences=1,
+        do_sample=False,
+        top_k=None,
+        top_p=None,
+        temperature=1.0,
+        pad_token_id=None,
+        eos_token_id=None,
+        **kwargs):
+        """
+        Generate text based on visual and textual inputs.
 
+        Args:
+            input_ids (torch.Tensor): The tokenized input text.
+            attention_mask (torch.Tensor, optional): The attention mask for the input text.
+            pixel_values (torch.Tensor, optional): The pixel values of the input image.
+            max_new_tokens (int, optional): The maximum number of new tokens to generate. Defaults to 32.
+            num_beams (int, optional): Number of beams for beam search. Defaults to 5.
+            num_return_sequences (int, optional): The number of independently computed returned sequences for each element in the batch. Defaults to 1.
+            do_sample (bool, optional): Whether to use sampling; use greedy decoding otherwise. Defaults to False.
+            top_k (int, optional): The number of highest probability vocabulary tokens to keep for top-k-filtering. Defaults to None.
+            top_p (float, optional): If set to float < 1, only the smallest set of most probable tokens with probabilities that add up to top_p or higher are kept for generation. Defaults to None.
+            temperature (float, optional): The value used to modulate the next token probabilities. Defaults to 1.0.
+            pad_token_id (int, optional): The id of the padding token.
+            eos_token_id (int, optional): The id of the end-of-sequence token.
+            **kwargs: Additional keyword arguments passed to the text_decoder.generate method.
+
+        Returns:
+            torch.Tensor: The generated token ids.
+        """
         # Step 1: Get vision features
-        # image size: 224 x 224, patch: 14
-        # -> vision features: (224/14)^2 = 256 tokens
         vision_output = self.vision_encoder.vision_model(pixel_values=pixel_values,
                                                         output_hidden_states=True)
         vision_features = vision_output.last_hidden_state  # (B, 256, vision_dim)
@@ -208,25 +229,27 @@ class TinyQwenVL(nn.Module):
         # Step 2: Adapt vision features
         adapted_features = self.adapter(vision_features)  # (B, 256, lang_dim)
 
-        # Step 3: Insert vision adapted embeddings with text embeddings (if input_ids provided)
-        # Get text‐token embeddings: (B, 1 + N_adapter + 1 + seq_len, D)
+        # Step 3: Insert vision adapted embeddings with text embeddings
         text_embeds = self.text_decoder.get_input_embeddings()(input_ids)
-        inserted_embeds = self.insert_embed(
-            adapted_features,
-            text_embeds
-        )   # (B, 256 + 2 + seq_len, lang_dim)
+        inserted_embeds = self.insert_embed(adapted_features, text_embeds)  # (B, 256 + 2 + seq_len, lang_dim)
 
-        # Prepare inputs for generation
+        # Step 4: Prepare inputs for generation
         model_inputs = {
             "inputs_embeds": inserted_embeds,
             "attention_mask": attention_mask
         }
 
-        # Use decoder's generate function (must be subclass of PreTrainedModel or GenerationMixin)
+        # Step 5: Call the text decoder's generate method with all parameters
         return self.text_decoder.generate(
             **model_inputs,
             max_new_tokens=max_new_tokens,
+            do_sample=do_sample,
             num_beams=num_beams,
+            num_return_sequences=num_return_sequences,
+            top_k=top_k,
+            top_p=top_p,
+            temperature=temperature,
             pad_token_id=pad_token_id,
-            eos_token_id=eos_token_id
+            eos_token_id=eos_token_id,
+            **kwargs
         )

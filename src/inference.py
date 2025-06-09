@@ -1,6 +1,7 @@
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+os.environ["HF_HOME"] = "/tmp/hf_cache"
 
 
 import torch
@@ -47,7 +48,7 @@ model.eval()
 batch = [{
     "question": "Please carefully observe the image and come up with a caption for the image.",
     "answer": [],
-    "image": Image.open("data/images/meowselfie.jpg")
+    "image": Image.open("data/images/dog_and_girl.jpeg")
 }]
 
 data = collate_fn(batch=batch, 
@@ -57,9 +58,9 @@ input_ids = data["input_ids"].to(device)
 pixel_values = data["pixel_values"].to(device)
 attention_mask = data["attention_mask"].to(device)
 
-# remove eos token
-input_ids = input_ids[:,:-1]
-attention_mask = attention_mask[:,:-1]
+# # remove eos token
+# input_ids = input_ids[:,:-1]
+# attention_mask = attention_mask[:,:-1]
 print(input_ids.shape)
 print(pixel_values.shape)
 print(attention_mask.shape)
@@ -67,18 +68,26 @@ print(f"pixel_values:\n{pixel_values}")
 # Greedy generation loop
 #    — we’ll append one token at a time
 
+num_return_sequences = 4
 with torch.no_grad():
     outputs = model.generate(
         input_ids=input_ids,
         attention_mask=attention_mask,
         pixel_values=pixel_values,
         max_new_tokens=64,
-        num_beams=10,
+        num_beams=4,
+        do_sample=True,
+        top_p=0.9,
+        top_k=20,
+        min_p=0,
+        num_return_sequences=num_return_sequences,
         pad_token_id=tokenizer.pad_token_id,
         eos_token_id=tokenizer.eos_token_id
     )
     print(outputs.shape)
 
-generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
 print(f"Prompt:{tokenizer.decode(input_ids[0], skip_special_tokens=True)}")
-print("Caption:", generated_text)
+print(f"Generate {num_return_sequences} caption(s):\n")
+for i, seq_i in enumerate(outputs):
+    generated_text = tokenizer.decode(seq_i, skip_special_tokens=True)
+    print(f"Caption {i+1}:\n{generated_text}")
