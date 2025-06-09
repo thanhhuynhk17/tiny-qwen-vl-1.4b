@@ -42,7 +42,6 @@ class PositionAwareAdapter(nn.Module):
 
         self.ln_q = nn.LayerNorm(vision_dim)
         self.ln_kv = nn.LayerNorm(vision_dim)
-        self.ln_out = nn.LayerNorm(lang_dim)
         
     def forward(self, vision_features):
         device = vision_features.device
@@ -186,3 +185,48 @@ class TinyQwenVL(nn.Module):
         # Insert to text_embeds
         text_embeds[:,1:N_adapter+1,:] = adapted_features
         return text_embeds
+    
+    def generate(self,
+                input_ids,
+                attention_mask=None,
+                pixel_values=None,
+                max_new_tokens=32,
+                num_beams=5,
+                pad_token_id=None,
+                eos_token_id=None,
+                **kwargs):
+        from transformers.generation import BeamSearchScorer
+        from transformers.generation.utils import GenerationMixin
+
+        # Step 1: Get vision features
+        # image size: 224 x 224, patch: 14
+        # -> vision features: (224/14)^2 = 256 tokens
+        vision_output = self.vision_encoder.vision_model(pixel_values=pixel_values,
+                                                        output_hidden_states=True)
+        vision_features = vision_output.last_hidden_state  # (B, 256, vision_dim)
+
+        # Step 2: Adapt vision features
+        adapted_features = self.adapter(vision_features)  # (B, 256, lang_dim)
+
+        # Step 3: Insert vision adapted embeddings with text embeddings (if input_ids provided)
+        # Get text‐token embeddings: (B, 1 + N_adapter + 1 + seq_len, D)
+        text_embeds = self.text_decoder.get_input_embeddings()(input_ids)
+        inserted_embeds = self.insert_embed(
+            adapted_features,
+            text_embeds
+        )   # (B, 256 + 2 + seq_len, lang_dim)
+
+        # Prepare inputs for generation
+        model_inputs = {
+            "inputs_embeds": inserted_embeds,
+            "attention_mask": attention_mask
+        }
+
+        # Use decoder's generate function (must be subclass of PreTrainedModel or GenerationMixin)
+        return self.text_decoder.generate(
+            **model_inputs,
+            max_new_tokens=max_new_tokens,
+            num_beams=num_beams,
+            pad_token_id=pad_token_id,
+            eos_token_id=eos_token_id
+        )

@@ -1,6 +1,10 @@
+--extra-index-url https://download.pytorch.org/whl/cu121
+
+torch==2.5.1+cu121
 datasets==3.6.0
 evaluate==0.4.3
 numpy==2.3.0
 Pillow==11.2.1
-torch==2.5.1+cu121
 transformers==4.52.4
+sentencepiece
+protobuf

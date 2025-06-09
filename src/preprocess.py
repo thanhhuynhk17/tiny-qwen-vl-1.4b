@@ -25,7 +25,10 @@ def collate_fn(batch, processor, tokenizer):
     images_pad = []
     image_pad_tokens = "".join([tokenizer.pad_token] * FIXED_QUERY_LEN)
     for sample in batch:
-        caption = f"<|extra_0|>{image_pad_tokens}<|extra_1|>\n{sample['question']}\n{sample['answer'][0]}<|endoftext|>"
+        if len(sample['answer']) > 0:
+            caption = f"<|extra_0|>{image_pad_tokens}<|extra_1|>\n{sample['question']}\n{sample['answer'][0]}<|endoftext|>"
+        else:
+            caption = f"<|extra_0|>{image_pad_tokens}<|extra_1|>\n{sample['question']}\n"
         captions.append(caption)
         images_pad.append(add_image_padding(sample['image']))
 

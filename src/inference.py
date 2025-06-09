@@ -1,63 +1,84 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+
 import torch
 from PIL import Image
 from transformers import AutoProcessor, AutoTokenizer
 from src.model import TinyQwenVL  # wherever you defined your class
-
-# 1. Setup
+from preprocess import collate_fn
+# Setup
 device = "cuda" if torch.cuda.is_available() else "cpu"
-device = "cpu"
-
+device = "cpu" # forcing cpu device
 # paths or model IDs
 SIGLIP_MODEL = "google/siglip-so400m-patch14-224"
 QWEN_MODEL = "Qwen/Qwen2.5-0.5B"
 
-# load model
-model = TinyQwenVL(
-    vision_dim=1152,
-    lang_dim=896,
-    num_queries=256,
-    freeze_vision=False,
-    freeze_text=False,
-    torch_dtype=torch.float32,
-).to(device)
-
-# load checkpoint
-
-model.eval()
-
 # load processor & tokenizer
 processor = AutoProcessor.from_pretrained(SIGLIP_MODEL)
 tokenizer = AutoTokenizer.from_pretrained(QWEN_MODEL, trust_remote_code=True)
+# add special tokens extended
+tokenizer.add_special_tokens({
+    'pad_token': '<|endoftext|>',
+    # Notes: Adding unknown special tokens is not supported
+    # <|extra_0|> as begin image token
+    # <|extra_1|> as end image token
+    'additional_special_tokens': ['<|extra_0|>', '<|extra_1|>']
+})
+tokenizer.padding_side='right'
+
+
+# load model
+model = TinyQwenVL(torch_dtype=torch.float32).to(device)
+# load checkpoint
+best_model_path = "models/checkpoints/best_tinyqwenvl_1.4B.pth"
+model.text_decoder.resize_token_embeddings(len(tokenizer))
+state_dict = torch.load(best_model_path, map_location=device)
+missing_keys, unexpected_keys = model.load_state_dict(state_dict, strict=False)
+print("Missing keys:", missing_keys)
+print("Unexpected keys:", unexpected_keys)
+print("adapter._precomputed_rope: ", model.adapter._precomputed_rope)
+if model.adapter._precomputed_rope == True:
+    model.adapter._precomputed_rope = False
+model.eval()
 
 # 2. Prepare inputs
-# — image
-image = Image.open("../data/images/untitled.jpg").convert("RGB")
-vision_inputs = processor(images=image, return_tensors="pt")
-pixel_values = vision_inputs.pixel_values.to(device)       # [1, 3, H, W]
+batch = [{
+    "question": "Please carefully observe the image and come up with a caption for the image.",
+    "answer": [],
+    "image": Image.open("data/images/meowselfie.jpg")
+}]
 
-# — text prompt
-prompt = "Describe the scene in the image:" 
-text_inputs = tokenizer(prompt, return_tensors="pt")
-input_ids     = text_inputs.input_ids.to(device)           # [1, seq_len]
-attention_mask= text_inputs.attention_mask.to(device)      # [1, seq_len]
+data = collate_fn(batch=batch, 
+            processor=processor,
+            tokenizer=tokenizer)
+input_ids = data["input_ids"].to(device)
+pixel_values = data["pixel_values"].to(device)
+attention_mask = data["attention_mask"].to(device)
 
-# 4. Greedy generation loop
+# remove eos token
+input_ids = input_ids[:,:-1]
+attention_mask = attention_mask[:,:-1]
+print(input_ids.shape)
+print(pixel_values.shape)
+print(attention_mask.shape)
+print(f"pixel_values:\n{pixel_values}")
+# Greedy generation loop
 #    — we’ll append one token at a time
-generated_ids = input_ids
-for step in range(50):
-    # rebuild attention mask: ones for existing tokens
-    cur_attn = torch.ones(1, model.num_queries + 2 + generated_ids.shape[1], device=device)
-    with torch.no_grad():
-        outs = model(
-            pixel_values=pixel_values,
-            input_ids=generated_ids,
-            attention_mask=cur_attn
-        )
-    next_logits = outs[:, -1, :]                     # [1, vocab_size]
-    next_token  = next_logits.argmax(dim=-1).unsqueeze(-1)  # [1,1]
-    generated_ids = torch.cat([generated_ids, next_token], dim=1)
-    if next_token.item() == tokenizer.eos_token_id:
-        break
 
-generated_text = tokenizer.decode(generated_ids[0], skip_special_tokens=True)
-print("→", generated_text)
+with torch.no_grad():
+    outputs = model.generate(
+        input_ids=input_ids,
+        attention_mask=attention_mask,
+        pixel_values=pixel_values,
+        max_new_tokens=64,
+        num_beams=10,
+        pad_token_id=tokenizer.pad_token_id,
+        eos_token_id=tokenizer.eos_token_id
+    )
+    print(outputs.shape)
+
+generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+print(f"Prompt:{tokenizer.decode(input_ids[0], skip_special_tokens=True)}")
+print("Caption:", generated_text)
