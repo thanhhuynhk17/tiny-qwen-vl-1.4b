@@ -5,7 +5,7 @@ from huggingface_hub import snapshot_download
 def main():
     snapshot_download(
         repo_id = "thanhhuynhk17/tiny-qwen-vl-1.4b",
-        local_dir = "./models/checkpoints",
+        local_dir = "./models",
         allow_patterns = ["checkpoints/*.pth"],
     )
 
