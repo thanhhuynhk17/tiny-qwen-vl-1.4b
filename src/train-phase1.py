@@ -1,10 +1,7 @@
 import sys
 import os
 import argparse
-
-# Add the project root directory to the Python path
-project_root = os.path.abspath(os.path.join(os.getcwd(), ".."))
-sys.path.append(project_root)
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Train TinyQwenVL model")
