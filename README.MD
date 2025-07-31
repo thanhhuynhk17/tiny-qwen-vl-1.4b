@@ -1,7 +1,7 @@
 # Tiny-Qwen-VL Model (v1.4B)
 
 - Total parameters: 1,380,450,994
-- Model size: 2633.00 MB (2.57 GB)
+- Model size: 2.76 GB (bfloat16)
 
 This repository and its contents are provided for academic and research purposes only.
 
